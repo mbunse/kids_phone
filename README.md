@@ -31,7 +31,7 @@ sudo pip install linphone4raspberry-3.9.1-cp27-none-any.whl
 To register the linphone client on a SIP service run the linphone command line tool:
 ```
 #> linphonec
-linphone> register 
+linphone> register sip:<username>@<SIP_domain> sip:<SIP_domain> <PASSWORD>
 ```
 This will create an rc file `/home/pi/.linphonerc` which will be used a standard configuration file for __kids_phone__.
 
