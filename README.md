@@ -6,6 +6,7 @@ Raspberry Pi project for a SIP phone for children.
 ### Software
 - linphone
 - linphone python wrapper
+- python GPIO
 
 ### Hardware
 - USB audio device with mic and phone plug
@@ -35,3 +36,7 @@ linphone> register sip:<username>@<SIP_domain> sip:<SIP_domain> <PASSWORD>
 ```
 This will create an rc file `/home/pi/.linphonerc` which will be used a standard configuration file for __kids_phone__.
 
+## Python GPIO modules
+```
+sudo apt-get install python-dev
+```
