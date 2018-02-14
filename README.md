@@ -12,9 +12,11 @@ Raspberry Pi project for a SIP phone for children.
 - USB audio device with mic and phone plug
 - switches (tbd.)
 
-At first, we need the USB sound card to be the default audio device. Therefore we create a file `/etc/alsa.conf` with the following content:
+At first, we need the USB sound card to be the default audio device. Therefore we create a file `/etc/asound.conf` with the following content:
 ```
-
+defaults.pcm.!card 1
+defaults.pcm.!device 0
+defaults.ctl.!card 1
 ```
 I had to reboot the raspi to make this work. Can be tested by runnig the following commands:
 ```
