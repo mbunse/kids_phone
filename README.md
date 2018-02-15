@@ -1,5 +1,5 @@
 # kids_phone
-Raspberry Pi project for a SIP phone for children.
+Raspberry Pi project for a SIP or VoIP phone for children.
 
 ## Prerequisites
 
@@ -10,19 +10,7 @@ Raspberry Pi project for a SIP phone for children.
 
 ### Hardware
 - USB audio device with mic and phone plug
-- switches (tbd.)
-
-At first, we need the USB sound card to be the default audio device. Therefore we create a file `/etc/asound.conf` with the following content:
-```
-defaults.pcm.!card 1
-defaults.pcm.!device 0
-defaults.ctl.!card 1
-```
-I had to reboot the raspi to make this work. Can be tested by runnig the following commands:
-```
-arecord -f test.wav
-aplay -f test.wav
-```
+- buttons (tbd.)
 
 Install linphone and python wrappers for the raspi:
 ```
