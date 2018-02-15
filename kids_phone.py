@@ -22,6 +22,15 @@ class Kids_phone:
         self.core.video_capture_enabled = False
         self.core.video_display_enabled = False
         self.core.max_calls = 1
+        print "Device: \n\n"
+        print self.core.ringer_device
+        self.core.ringer_device='ALSA: bcm2835 ALSA'
+        self.core.capture_device='ALSA: C-Media USB Headphone Set'
+        self.core.playback_device='ALSA: C-Media USB Headphone Set'
+        #self.core.ringer_device='ALSA: default device'
+        self.core.ring='/usr/share/sounds/linphone/rings/oldphone.wav'
+        #print "Sound: \n\n"
+        #print self.core.sound_devices
         self.call = False
         self.state = linphone.CallState.Idle
         GPIO.setmode(GPIO.BCM)
@@ -32,6 +41,14 @@ class Kids_phone:
         print "Terminating sigint"
         self.core.terminate_all_calls()
         self.quit = True
+        try:
+            sys.stdout.close()
+        except:
+            pass
+        try:
+            sys.stderr.close()
+        except:
+            pass
  
     def log_handler(self, level, msg):
         method = getattr(logging, level)
@@ -61,7 +78,7 @@ class Kids_phone:
                 self.call = False
             elif self.state in (linphone.CallState.Idle, linphone.CallState.Released, linphone.CallState.End):
                 params = self.core.create_call_params(self.core.current_call)
-                self.core.invite_with_params(NUMBER1, params)
+                self.core.invite_with_params(phonebook.NUMBER1, params)
             elif GPIO.input(CRADLE_GPIO)==True:
                 self.core.terminate_all_calls()
   
