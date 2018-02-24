@@ -30,3 +30,18 @@ This will create an rc file `/home/pi/.linphonerc` which will be used a standard
 ```
 sudo apt-get install python-dev
 ```
+
+## Configuration Webserver
+```
+sudo apt-get install python3-pip
+sudo pip3 install django
+sudo apt-get install git
+```
+
+## Access point for initial setup
+
+See [SETTING UP A RASPBERRY PI AS AN ACCESS POINT IN A STANDALONE NETWORK (NAT)](https://www.raspberrypi.org/documentation/configuration/wireless/access-point.md)
+```
+sudo apt-get install dnsmasq hostapdsudo
+```
+
