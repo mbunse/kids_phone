@@ -1,23 +1,17 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 import linphone
 import logging
 import signal
 import time
 import RPi.GPIO as GPIO
-#import phonebook
+
 import threading
 import sqlite3
 
+from fetap_keypad import Fetap_Keypad 
+
 CRADLE_GPIO = 25
-LINE_123 = 14
-ROW_369 = 15
-ROW_258 = 18
-ROW_147 = 24
-LINE_456 = 16
-LINE_789 = 21
-LINE_0 = 20
-LINE_X = 26
 LED = 7
 
 
@@ -57,31 +51,8 @@ class Kids_phone:
         # to a button pressed down
         GPIO.add_event_detect(CRADLE_GPIO, GPIO.BOTH, callback=self.cradle_handler, bouncetime=20)
 
-        self.button_123 = False
-        self.button_369 = False
-        self.button_258 = False
-        self.button_147 = False
-        self.button_456 = False
-        self.button_789 = False
-        self.button_0 = False
-        GPIO.setup(LINE_123, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(ROW_147, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(ROW_258, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(ROW_369, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(LINE_456, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(LINE_789, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.setup(LINE_0, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.add_event_detect(LINE_123, GPIO.BOTH, callback=self.button_123_handler, bouncetime=200)
-        GPIO.add_event_detect(ROW_147, GPIO.BOTH, callback=self.button_147_handler, bouncetime=200)
-        GPIO.add_event_detect(ROW_258, GPIO.BOTH, callback=self.button_258_handler, bouncetime=200)
-        GPIO.add_event_detect(ROW_369, GPIO.BOTH, callback=self.button_369_handler, bouncetime=200)
-        GPIO.add_event_detect(LINE_456, GPIO.BOTH, callback=self.button_456_handler, bouncetime=200)
-        GPIO.add_event_detect(LINE_789, GPIO.BOTH, callback=self.button_789_handler, bouncetime=200)
-        GPIO.add_event_detect(LINE_0, GPIO.BOTH, callback=self.button_0_handler, bouncetime=200)
-
-        GPIO.setup(LINE_X, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        GPIO.add_event_detect(LINE_X, GPIO.BOTH, callback=self.button_x_handler, bouncetime=200)
         self.phonebook_db = sqlite3.connect('/home/pi/kids_phone_conf/db.kids_phone.sqlite', check_same_thread=False)
+        self.keypad = Fetap_Keypad(key_handler=self.call)
 
     def signal_handler(self, signal, frame):
         logging.info("Terminating sigint")
@@ -146,137 +117,6 @@ class Kids_phone:
             self.cradle_up = False
             self.core.terminate_all_calls()
             self.blink_event.set()
-
-    def button_123_handler(self, channel):
-        if GPIO.input(channel) == False:
-            # button down
-            logging.debug("123 pressed")
-            self.button_123 = True
-            self.check_button()
-        else:
-            #button up
-            logging.debug("123 released")
-            self.button_123 = False
-
-    def button_369_handler(self, channel):
-        if GPIO.input(channel) == False:
-            #button down:
-            logging.debug("369 pressed")
-            self.button_369 = True
-            self.check_button()
-        else:
-            logging.debug("369 released")
-            self.button_369 = False
-
-    def button_258_handler(self, channel):
-        if GPIO.input(channel) == False:
-            #button down:
-            logging.debug("258 pressed")
-            self.button_258 = True
-            self.check_button()
-        else:        
-            logging.debug("258 released")
-            self.button_258 = False
-        
-    def button_147_handler(self, channel):
-        if GPIO.input(channel) == False:
-            #button down:
-            logging.debug("147 pressed")
-            self.button_147 = True
-            self.check_button()
-        else:
-            logging.debug("147 released")
-            self.button_147 = False
-
-    def button_456_handler(self, channel):
-        if GPIO.input(channel) == False:
-            #button down:
-            logging.debug("456 pressed")
-            self.button_456 = True
-            self.check_button()
-        else:
-            logging.debug("456 pressed")
-            self.button_456 = False
-
-    def button_789_handler(self, channel):
-        if GPIO.input(channel) == False:
-            #button down:
-            logging.debug("789 pressed")
-            self.button_789 = True
-            self.check_button()
-        else:
-            logging.debug("789 released")
-            self.button_789 = False
-
-    def button_0_handler(self, channel):
-        if GPIO.input(channel) == False:
-            #button down:
-            logging.debug("0 pressed")
-            self.button_0 = True
-            self.check_button()
-        else:
-            logging.debug("0 released")
-            self.button_0 = False
-
-    
-    def button_x_handler(self, channel):
-        if GPIO.input(channel) == False:
-            #button down:
-            logging.info("x pressed")
-        else:
-            logging.info("x released")
-
-    def check_button(self):
-        if self.button_123 and self.button_147:
-            logging.info("1 pressed")
-            self.button_123=False
-            self.button_147=False
-            self.call(1)
-        elif self.button_123 and self.button_258:
-            logging.info("2 pressed")
-            self.button_123=False
-            self.button_258=False
-            self.call(2)
-        elif self.button_123 and self.button_369:
-            logging.info("3 pressed")
-            self.button_123=False
-            self.button_369=False
-            self.call(3)
-        elif self.button_456 and self.button_147:
-            logging.info("4 pressed")
-            self.button_456=False
-            self.button_147=False
-            self.call(4)
-        elif self.button_456 and self.button_258:
-            logging.info("5 pressed")
-            self.button_456=False
-            self.button_258=False
-            self.call(5)
-        elif self.button_456 and self.button_369:
-            logging.info("6 pressed")
-            self.button_456=False
-            self.button_369=False
-            self.call(6)
-        elif self.button_789 and self.button_147:
-            logging.info("7 pressed")
-            self.button_789=False
-            self.button_147=False
-            self.call(7)
-        elif self.button_789 and self.button_258:
-            logging.info("8 pressed")
-            self.button_789=False
-            self.button_258=False
-            self.call(8)
-        elif self.button_789 and self.button_369:
-            logging.info("9 pressed")
-            self.button_789=False
-            self.button_369=False
-            self.call(9)
-        elif self.button_0 and self.button_258:
-            logging.info("0 pressed")
-            self.button_0=False
-            self.button_258=False
-            self.call(0)
 
     def blink(self, channel):
         while self.quit == False:
