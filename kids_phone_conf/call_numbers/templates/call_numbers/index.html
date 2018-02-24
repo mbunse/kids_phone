@@ -1,0 +1,24 @@
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="" method="post">
+{% csrf_token %}
+{% for key_and_number in key_and_number_list %}
+    <label for="key{{ key_and_number.key }}">{{ key_and_number.key }}</label>
+    <input type="text" name="key{{ key_and_number.key }}" value="{{ key_and_number.phonenumber }}" />
+    <br />
+{% endfor %}
+<input type="submit" value="Save" />
+</form>
+{% csrf_token %}
+{% for caller_number_allowed in caller_number_allowed_list %}
+    {{ caller_number_allowed.phonenumber }} 
+    <form action="" method="post">
+        {% csrf_token %}
+    <input type="hidden" name="delete" value="{{ caller_number_allowed.phonenumber }}" />
+    <input type="submit" value="delete" /></form><br />
+{% endfor %}
+<form action="" method="post">
+{% csrf_token %}
+<input type="text" name="add_phonenumber" />
+<input type="submit" value="Add" />
+</form>
