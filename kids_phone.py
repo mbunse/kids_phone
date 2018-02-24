@@ -5,8 +5,9 @@ import logging
 import signal
 import time
 import RPi.GPIO as GPIO
-import phonebook
+#import phonebook
 import threading
+import sqlite3
 
 CRADLE_GPIO = 25
 LINE_123 = 14
@@ -26,7 +27,7 @@ class Kids_phone:
         callbacks =  {'call_state_changed': self.call_state_changed}
  
         # Configure the linphone core
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(name)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
         signal.signal(signal.SIGINT, self.signal_handler)
         linphone.set_log_handler(self.log_handler)
         self.core = linphone.Core.new(callbacks, "/home/pi/.linphonerc", None)
@@ -80,6 +81,7 @@ class Kids_phone:
 
         GPIO.setup(LINE_X, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.add_event_detect(LINE_X, GPIO.BOTH, callback=self.button_x_handler, bouncetime=200)
+        self.phonebook_db = sqlite3.connect('/home/pi/kids_phone_conf/db.kids_phone.sqlite', check_same_thread=False)
 
     def signal_handler(self, signal, frame):
         logging.info("Terminating sigint")
@@ -93,9 +95,17 @@ class Kids_phone:
             sys.stderr.close()
         except:
             pass
+        # Inform blink thread that app will be quit
         self.blink_event.set()
+
+        # Wait for blink thread to exit
         self.blink_thread.join()
+
+        # Free GPIO
         GPIO.cleanup()
+
+        # Close db connection
+        self.phonebook_db.close()
 
     def log_handler(self, level, msg):
         method = getattr(logging, level)
@@ -106,7 +116,10 @@ class Kids_phone:
         if state == linphone.CallState.IncomingReceived:
         # if call.remote_address.as_string_uri_only() in self.whitelist:
             logging.info("Anruf von {address}.".format(address=call.remote_address.as_string_uri_only()))
-            if call.remote_address.username not in phonebook.WHITELIST:
+            whitelist = [i[0] for i in self.phonebook_db.execute("select * from call_numbers_caller_number_allowed;").fetchall()]
+            logging.info("Anruf von {address}.".format(address=call.remote_address.as_string_uri_only()))
+            logging.info("Erlaubte Nummern: " + ", ".join(whitelist))
+            if call.remote_address.username not in whitelist:
                 core.decline_call(call, linphone.Reason.Declined)
             #params = core.create_call_params(call)
             #core.accept_call_with_params(call, params)
@@ -299,10 +312,20 @@ class Kids_phone:
             return
         # Call someone if there is no active call:
         if self.state in (linphone.CallState.Idle, linphone.CallState.Released, linphone.CallState.End):
-            params = self.core.create_call_params(self.core.current_call)
-            params.early_media_sending_enabled = False
-            self.core.invite_with_params(phonebook.NUMBERS[number], params)
-            self.blink_event.set()
+            # Check if phonenumber is set for current key
+            phonenumber = self.phonebook(number)
+            if phonenumber != None:
+                params = self.core.create_call_params(self.core.current_call)
+                params.early_media_sending_enabled = False
+                self.core.invite_with_params(phonenumber, params)
+
+                # Inform blink thread that state has been changed
+                self.blink_event.set()
+    
+    def phonebook(self, number):
+        number = self.phonebook_db.execute(
+            'select phonenumber from call_numbers_key_and_number where key=?', str(number)).fetchone()[0]
+        return str(number)
   
     def run(self):
         while not self.quit:
