@@ -6,14 +6,16 @@ import signal
 import time
 import RPi.GPIO as GPIO
 
-import threading
 import sqlite3
 
-from fetap_keypad import Fetap_Keypad 
+import fetap_keypad 
+import cradle, blinker
 
-CRADLE_GPIO = 25
-LED = 7
-
+BLINK_MODES = {
+    "RUN": [0.5, 5],
+    "INCOMING_CALL": [0.3, 0.2],
+    "OUTGOING_CALL": [0.4, 0.1]
+}
 
 class Kids_phone:
     def __init__(self):
@@ -36,23 +38,14 @@ class Kids_phone:
 
         self.state = linphone.CallState.Idle
 
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(LED, GPIO.OUT)
-        GPIO.output(LED, False)
-        self.blink_thread = threading.Thread(target=self.blink, args=(LED,))
-        self.blink_event = threading.Event()
-        self.blink_thread.start()
+        # Setup blinker for LED
+        blinker.setup_and_start(modes=BLINK_MODES)
 
-        #print "Sound: \n\n"
-        #print self.core.sound_devices
-        GPIO.setup(CRADLE_GPIO, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        self.cradle_up = False
-        # cradle is up when connection is closed, i.e. the state usually connected
-        # to a button pressed down
-        GPIO.add_event_detect(CRADLE_GPIO, GPIO.BOTH, callback=self.cradle_handler, bouncetime=20)
+        # Setup cradle handler
+        cradle.setup(self.cradle_up_handler, self.cradle_down_handler)
 
         self.phonebook_db = sqlite3.connect('/home/pi/kids_phone_conf/db.kids_phone.sqlite', check_same_thread=False)
-        self.keypad = Fetap_Keypad(key_handler=self.call)
+        fetap_keypad.setup(key_handler=self.call)
 
     def signal_handler(self, signal, frame):
         logging.info("Terminating sigint")
@@ -66,12 +59,9 @@ class Kids_phone:
             sys.stderr.close()
         except:
             pass
-        # Inform blink thread that app will be quit
-        self.blink_event.set()
 
-        # Wait for blink thread to exit
-        self.blink_thread.join()
-
+        # Stop blinking
+        blinker.stop()
         # Free GPIO
         GPIO.cleanup()
 
@@ -92,63 +82,31 @@ class Kids_phone:
             logging.info("Erlaubte Nummern: " + ", ".join(whitelist))
             if call.remote_address.username not in whitelist:
                 core.decline_call(call, linphone.Reason.Declined)
-            #params = core.create_call_params(call)
-            #core.accept_call_with_params(call, params)
+
+            blinker.set_mode("INCOMING_CALL")
         elif state == linphone.CallState.Released:
             self.core.terminate_all_calls()
-        #    else:
-        # core.decline_call(call, linphone.Reason.Declined)
-        # chat_room = core.get_chat_room_from_uri(self.whitelist[0])
-        # msg = chat_room.create_message(call.remote_address_as_string + ' tried to call')
-        # chat_room.send_chat_message(msg)
-
-    def cradle_handler(self, channel):
-        if GPIO.input(channel) == False:
-            #cradle up
-            logging.info("Hoerer abgenommen")
-            self.cradle_up = True
-            # Accept incoming call if there is an incoming call
-            if self.state == linphone.CallState.IncomingReceived:
-                params = self.core.create_call_params(self.core.current_call)
-                self.core.accept_call_with_params(self.core.current_call, params)
-                self.blink_event.set()
-        else:
-            logging.info("Hoerer aufgelegt")
-            self.cradle_up = False
-            self.core.terminate_all_calls()
-            self.blink_event.set()
-
-    def blink(self, channel):
-        while self.quit == False:
-            self.blink_event.clear()
-            if self.state == linphone.CallState.IncomingReceived:
-                GPIO.output(LED, True)
-                if self.blink_event.wait(0.3) == True: 
-                    continue 
-                GPIO.output(LED, False)
-                if self.blink_event.wait(0.2) == True: 
-                    continue
-            elif self.state in (linphone.CallState.OutgoingInit, 
+            blinker.set_mode("RUN")
+        elif self.state in (linphone.CallState.OutgoingInit, 
                 linphone.CallState.OutgoingProgress, 
                 linphone.CallState.OutgoingRinging, 
                 linphone.CallState.OutgoingEarlyMedia,
                 linphone.CallState.Connected):
-                GPIO.output(LED, True)
-                if self.blink_event.wait(0.4) == True: 
-                    continue 
-                GPIO.output(LED, False)
-                if self.blink_event.wait(0.1) == True: 
-                    continue                
-            else:    
-                GPIO.output(LED, True)
-                if self.blink_event.wait(0.5) == True:
-                    continue 
-                GPIO.output(LED, False)
-                if self.blink_event.wait(5.0) == True:
-                    continue 
+                blinker.set_mode("OUTGOING_CALL")
+        else:
+            blinker.set_mode("RUN")
+
+    def cradle_up_handler(self):
+        # Accept incoming call if there is an incoming call
+        if self.state == linphone.CallState.IncomingReceived:
+            params = self.core.create_call_params(self.core.current_call)
+            self.core.accept_call_with_params(self.core.current_call, params)
+    
+    def cradle_down_handler(self):
+        self.core.terminate_all_calls()
 
     def call(self, number):
-        if self.cradle_up == False:
+        if cradle.check_cradle() == False:
             return
         # Call someone if there is no active call:
         if self.state in (linphone.CallState.Idle, linphone.CallState.Released, linphone.CallState.End):
@@ -158,9 +116,6 @@ class Kids_phone:
                 params = self.core.create_call_params(self.core.current_call)
                 params.early_media_sending_enabled = False
                 self.core.invite_with_params(phonenumber, params)
-
-                # Inform blink thread that state has been changed
-                self.blink_event.set()
     
     def phonebook(self, number):
         number = self.phonebook_db.execute(
