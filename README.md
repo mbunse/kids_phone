@@ -45,3 +45,75 @@ See [SETTING UP A RASPBERRY PI AS AN ACCESS POINT IN A STANDALONE NETWORK (NAT)]
 sudo apt-get install dnsmasq hostapdsudo
 ```
 
+## Make kids phone a daemon
+
+See https://www.thomaschristlieb.de/ein-python-script-mit-systemd-als-daemon-systemd-tut-garnicht-weh/
+
+ *  create dedicated system user ( `-r` ) with no logn shell (`-s /bin/false`)
+ *  create a dedicated /usr/bin/kids_phone dir
+
+```
+sudo useradd -r -s /bin/false kids_phone
+# Add user to gpio group to grand access to /dev/mem
+sudo adduser kids_phone gpio
+# Grant access to audio
+sudo adduser kids_phone audio
+# Grant access to usb
+sudo adduser kids_phone plugdev
+sudo mkdir /usr/bin/kids_phone
+```
+
+ *  move package to /usr/bin/kids_phone
+```
+sudo cp *.py /usr/bin/kids_phone/.
+sudo chmod +x /usr/bin/kids_phone/kids_phone.py
+sudo chown -R kids_phone:kids_phone /usr/bin/kids_phone
+```
+
+ *  make conf dir and conf file
+```
+sudo mkdir /etc/kids_phone
+sudo cp linphonerc_bak /etc/kids_phone/linphone.conf
+sudo chown -R kids_phone:kids_phone /etc/kids_phone
+```
+ *  create daemon config file
+ 
+```
+sudo nano /etc/systemd/system/kids_phone.service
+```
+ 
+Content:
+```
+[Unit]
+Description=Kids phone daemon
+Wants=network-online.target
+After=network-online.target syslog.target
+
+[Service]
+Type=simple
+User=kids_phone
+Group=kids_phone
+WorkingDirectory=/usr/bin/kids_phone/
+ExecStart=/usr/bin/kids_phone/kids_phone.py
+SyslogIdentifier=kids_phone
+StandardOutput=syslog
+StandardError=syslog
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
+```
+
+http://wiki.rsyslog.com/index.php/Filtering_by_program_name
+https://stackoverflow.com/questions/37585758/how-to-redirect-output-of-systemd-service-to-a-file
+ *  create a file `/etc/rsyslog.d/kids_phone.conf`
+ 
+```
+sudo nano /etc/rsyslog.d/kids_phone.conf
+```
+ 
+Content
+```
+if $programname == 'kids_phone' then /var/log/kids_phone.log
+if $programname == 'kids_phone' then ~
+```
