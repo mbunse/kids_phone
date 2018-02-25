@@ -4,6 +4,8 @@ import linphone
 import logging
 import signal
 import time
+from os import environ
+
 import RPi.GPIO as GPIO
 
 import sqlite3
@@ -26,7 +28,11 @@ class Kids_phone:
         logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(name)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
         signal.signal(signal.SIGINT, self.signal_handler)
         linphone.set_log_handler(self.log_handler)
-        self.core = linphone.Core.new(callbacks, "/home/pi/.linphonerc", None)
+        if "LINPHONE_CFG" in environ:
+            linphone_cfg=environ.get("LINPHONE_CFG")
+        else:
+            linphone_cfg="/home/pi/.linphonerc"
+        self.core = linphone.Core.new(callbacks, linphone_cfg, None)
         self.core.video_capture_enabled = False
         self.core.video_display_enabled = False
         self.core.max_calls = 1

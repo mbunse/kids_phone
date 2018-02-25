@@ -9,6 +9,7 @@ User=kids_phone
 Group=kids_phone
 WorkingDirectory=/usr/bin/kids_phone/
 ExecStart=/usr/bin/kids_phone/kids_phone.py
+Environment=LINPHONE_CFG=/etc/kids_phone/linphone.conf
 SyslogIdentifier=kids_phone
 StandardOutput=syslog
 StandardError=syslog

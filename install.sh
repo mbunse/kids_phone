@@ -28,3 +28,5 @@ chmod ag+r /etc/rsyslog.d/kids_phone.conf
 cp kids_phone.service /etc/systemd/system/kids_phone.service
 chmod ag+r /etc/systemd/system/kids_phone.service
 
+# reload units
+systemctl daemon-reload
