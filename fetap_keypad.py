@@ -40,7 +40,7 @@ def setup(key_handler):
         if pin:
             logging.debug("Setting up pin {pin}".format(pin=pin))
             GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-            GPIO.add_event_detect(pin, GPIO.BOTH, callback=pin_handler, bouncetime=200)
+            GPIO.add_event_detect(pin, GPIO.BOTH, callback=pin_handler)
 def cleanup():
     logging.debug("cleaning up {name}".format(name=__file__))
     #GPIO.cleanup(ROW_PINS+COL_PINS)
