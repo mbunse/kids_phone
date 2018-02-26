@@ -50,7 +50,12 @@ class Kids_phone:
         # Setup cradle handler
         cradle.setup(self.cradle_up_handler, self.cradle_down_handler)
 
-        self.phonebook_db = sqlite3.connect('/home/pi/kids_phone_conf/db.kids_phone.sqlite', check_same_thread=False)
+        if "DB_PATH" in environ:
+            db_path = environ.get("DB_DIR")
+        else:
+            db_path = '/home/pi/kids_phone_conf/db.kids_phone.sqlite'
+        logging.info("Opening db from {db_path}.".format(db_path=db_path))
+        self.phonebook_db = sqlite3.connect(db_path, check_same_thread=False)
         fetap_keypad.setup(key_handler=self.call)
 
     def signal_handler(self, signal, frame):

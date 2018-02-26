@@ -21,7 +21,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if "PROD" in os.environ:
+    DEBUG = False
+else:
+    DEBUG = True
 
 # Application definition
 
@@ -69,12 +72,14 @@ WSGI_APPLICATION = 'kids_phone_conf.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.kids_phone.sqlite'),
     }
 }
+
 
 
 # Password validation

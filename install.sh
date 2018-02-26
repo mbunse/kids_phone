@@ -20,7 +20,7 @@ mkdir -p /etc/kids_phone
 cp linphonerc_bak /etc/kids_phone/linphone.conf
 chown -R kids_phone:kids_phone /etc/kids_phone
 
-# set uo logging
+# set up logging
 cp kids_phone_log.conf /etc/rsyslog.d/kids_phone.conf
 chmod ag+r /etc/rsyslog.d/kids_phone.conf
 
@@ -28,5 +28,30 @@ chmod ag+r /etc/rsyslog.d/kids_phone.conf
 cp kids_phone.service /etc/systemd/system/kids_phone.service
 chmod ag+r /etc/systemd/system/kids_phone.service
 
+
+# create dedicated user
+useradd -r -s /bin/false -g kids_phone kids_phone_www
+
+## kids_phone_conf web interface
+sudo mkdir -p /var/www
+cp -r kids_phone_conf /var/www/.
+chown -R kids_phone_www:kids_phone /var/www/kids_phone_conf
+
+# set up logging
+cp kids_phone_www_log.conf /etc/rsyslog.d/kids_phone_www.conf
+chmod ag+r /etc/rsyslog.d/kids_phone_www.conf
+
+# set up service
+cp kids_phone_www.service /etc/systemd/system/kids_phone_www.service
+chmod ag+r /etc/systemd/system/kids_phone_www.service
+
 # reload units
 systemctl daemon-reload
+
+# Restart logging service
+systemctl restart rsyslog
+
+# enable services
+systemctl enable kids_phone
+systemctl enable kids_phone_www
+
