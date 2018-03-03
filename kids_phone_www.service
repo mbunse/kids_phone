@@ -8,7 +8,7 @@ Type=simple
 User=kids_phone_www
 Group=kids_phone
 WorkingDirectory=/var/www/kids_phone_conf
-ExecStart=/usr/bin/gunicorn3 -b 0.0.0.0:8000 kids_phone_conf.wsgi
+ExecStart=/usr/bin/gunicorn3 -b localhost:8000 kids_phone_conf.wsgi
 Environment=PROD=prod
 SyslogIdentifier=kids_phone_www
 StandardOutput=syslog

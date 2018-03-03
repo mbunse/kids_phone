@@ -45,6 +45,20 @@ chmod ag+r /etc/rsyslog.d/kids_phone_www.conf
 cp kids_phone_www.service /etc/systemd/system/kids_phone_www.service
 chmod ag+r /etc/systemd/system/kids_phone_www.service
 
+# set up nginx
+systemctl stop nginx
+IP=`ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`
+echo $IP
+openssl req -x509 -newkey rsa:4096 -keyout ssl-cert-kids_phone.key -out ssl-cert-kids_phone.pem -nodes -subj "/CN=$IP/C=DE"
+cat nginx.conf | sed "s/server_name  localhost/server_name  $IP/g" >  nginx.conf_ip
+
+mv nginx.conf_ip /etc/nginx/nginx.conf
+rm /etc/nginx/sites-enabled/*
+# openssl req -x509 -newkey rsa:4096 -keyout ssl-cert-kids_phone.key -out ssl-cert-kids_phone.pem -nodes -subj `ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\/CN=\2\/C=DE/p'`
+
+cp ssl-cert-kids_phone.key /etc/ssl/private/ssl-cert-kids_phone.key
+cp ssl-cert-kids_phone.pem /etc/ssl/certs/ssl-cert-kids_phone.pem
+
 # reload units
 systemctl daemon-reload
 
@@ -54,4 +68,5 @@ systemctl restart rsyslog
 # enable services
 systemctl enable kids_phone
 systemctl enable kids_phone_www
+systemctl start nginx
 

@@ -1,3 +1,6 @@
 phonebook.py
 kids_phone_conf/kids_phone_conf/secrets.py
 kids_phone_conf/call_numbers/initial_private_fixture.json
+*.pyc
+kids_phone_conf/call_numbers/migrations/
+

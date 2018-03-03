@@ -68,5 +68,33 @@
         "fields": {
             "phonenumber": null
         }
-    }
+    },
+    {
+        "model": "call_numbers.Global_Settings",
+        "pk": "sip_username",
+        "fields": {
+            "value": null
+        }       
+    },
+    {
+        "model": "call_numbers.Global_Settings",
+        "pk": "sip_password",
+        "fields": {
+            "value": null
+        }       
+    },   
+    {
+        "model": "call_numbers.Global_Settings",
+        "pk": "sip_realm",
+        "fields": {
+            "value": null
+        }       
+    },   
+    {
+        "model": "call_numbers.Global_Settings",
+        "pk": "sip_proxy",
+        "fields": {
+            "value": null
+        }       
+    }  
 ]

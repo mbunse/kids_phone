@@ -22,3 +22,7 @@ class Caller_Number_Allowed(models.Model):
                 message="Bitte eine gültige Telefonnummer eingeben (00 statt +).",
                 code="invalid_phonenumer")
             ])
+
+class Global_Settings(models.Model):
+    key = models.CharField(primary_key=True, max_length=50)
+    value = models.CharField(null=True)
