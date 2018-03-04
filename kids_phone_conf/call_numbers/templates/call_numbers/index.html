@@ -7,7 +7,7 @@
     <input type="text" name="key{{ key_and_number.key }}" value="{{ key_and_number.phonenumber }}" />
     <br />
 {% endfor %}
-<input type="submit" value="Save" />
+<input type="submit" value="Save phonenumbers" />
 </form>
 {% csrf_token %}
 {% for caller_number_allowed in caller_number_allowed_list %}
@@ -21,4 +21,16 @@
 {% csrf_token %}
 <input type="text" name="add_phonenumber" />
 <input type="submit" value="Add" />
+</form>
+<form action="" method="post">
+{% csrf_token %}
+<label for="sip_username">SIP username</label>
+<input type="text" name="sip_username" placeholder="username" value="{{ sip_username }}"/><br />
+<label for="sip_password">SIP password</label>
+<input type="password" name="sip_password" placeholder="&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;&#9679;"/><br />
+<label for="sip_realm">SIP realm</label>
+<input type="text" name="sip_realm" placeholder="sipgate.com" value="{{ sip_realm }}"/><br />
+<label for="sip_proxy">SIP proxy</label>
+<input type="text" name="sip_proxy" placeholder="sipgate.com" value="{{ sip_proxy }}"/><br />
+<input type="submit" value="Save SIP settings" />
 </form>

@@ -1,6 +1,22 @@
 from django.shortcuts import render
+from django.conf import settings
 
-from .models import Key_And_Number, Caller_Number_Allowed
+from .models import Key_And_Number, Caller_Number_Allowed, Global_Settings
+
+# Restart kids_phone if SIP account is updated
+from pydbus import SystemBus
+
+
+
+
+# parser for linphone config
+import configparser
+
+# Regex for parsing sip realm
+import re
+
+# Hashing of sip password
+import hashlib
 
 # import the logging library
 import logging
@@ -33,8 +49,51 @@ def index(request, delete_phonenumber=None):
     caller_number_allowed_list = Caller_Number_Allowed.objects.order_by("phonenumber")
     key_and_number_list = Key_And_Number.objects.all()
 
+    # Read linphone conf
+    config = configparser.ConfigParser()
+    config.read(settings.LINPHONERC)
+
+    sip_username = None
+    sip_realm = None
+    sip_proxy = None
+
+    # Check if user requested update of SIP account information
+    if all (k in request.POST for k in ("sip_username","sip_realm", "sip_proxy", "sip_password")):
+        sip_username = request.POST["sip_username"]
+        sip_realm = request.POST["sip_realm"]
+        sip_proxy = request.POST["sip_proxy"]
+        sip_password = request.POST["sip_password"]
+
+        config["auth_info_0"]["username"] = sip_username
+        config["auth_info_0"]["ha1"] = hashlib.md5(
+            "{username}:{realm}:{password}".format(
+                username=sip_username, realm=sip_realm, password=sip_password
+                ).encode()
+            ).hexdigest()
+        config["auth_info_0"]["realm"] = sip_realm
+        config["proxy_0"]["reg_proxy"] = "<sip:{proxy}>".format(proxy=sip_proxy)
+        config["proxy_0"]["reg_identity"] = "sip:{username}@{realm}".format(username=sip_username, realm=sip_realm)
+        with open(settings.LINPHONERC, "w") as f:
+            config.write(f)
+            # Restart kids_phone
+            if settings.DEBUG == False:
+                SystemBus().get(".systemd1").RestartUnit("kids_phone.service", "fail")
+
+
+    if "auth_info_0" in config.sections():
+        sip_username = config["auth_info_0"]["username"]
+        if "realm" in config["auth_info_0"]:
+            sip_realm =  config["auth_info_0"]["realm"]
+    if "proxy_0" in config.sections():
+        if "reg_proxy" in config["proxy_0"]:
+            sip_proxy = re.search("<sip:([^>]*)>", config["proxy_0"]["reg_proxy"]).group(1)
+        
+
     context = {
         'key_and_number_list': key_and_number_list,
         'caller_number_allowed_list': caller_number_allowed_list,
+        'sip_username': sip_username,
+        'sip_realm': sip_realm,
+        'sip_proxy': sip_proxy,
     }
     return render(request, 'call_numbers/index.html', context)

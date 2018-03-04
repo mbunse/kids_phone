@@ -23,8 +23,26 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: don't run with debug turned on in production!
 if "PROD" in os.environ:
     DEBUG = False
+    LINPHONERC = '/etc/kids_phone/linphone.conf'
 else:
     DEBUG = True
+    LINPHONERC = '/home/pi/.linphonerc'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}
 
 # Application definition
 

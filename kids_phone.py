@@ -19,7 +19,7 @@ BLINK_MODES = {
     "OUTGOING_CALL": [0.4, 0.1]
 }
 
-class Kids_phone:
+class Kids_Phone:
     def __init__(self):
         self.quit = False
         callbacks =  {'call_state_changed': self.call_state_changed}
@@ -33,6 +33,14 @@ class Kids_phone:
         else:
             linphone_cfg="/home/pi/.linphonerc"
         self.core = linphone.Core.new(callbacks, linphone_cfg, None)
+
+        if "DB_PATH" in environ:
+            db_path = environ.get("DB_PATH")
+        else:
+            db_path = 'kids_phone_conf/db.kids_phone.sqlite'
+        logging.info("Opening db from {db_path}.".format(db_path=db_path))
+        self.phonebook_db = sqlite3.connect(db_path, check_same_thread=False)
+
         self.core.video_capture_enabled = False
         self.core.video_display_enabled = False
         self.core.max_calls = 1
@@ -50,12 +58,7 @@ class Kids_phone:
         # Setup cradle handler
         cradle.setup(self.cradle_up_handler, self.cradle_down_handler)
 
-        if "DB_PATH" in environ:
-            db_path = environ.get("DB_DIR")
-        else:
-            db_path = '/home/pi/kids_phone_conf/db.kids_phone.sqlite'
-        logging.info("Opening db from {db_path}.".format(db_path=db_path))
-        self.phonebook_db = sqlite3.connect(db_path, check_same_thread=False)
+
         fetap_keypad.setup(key_handler=self.call)
 
     def signal_handler(self, signal, frame):
@@ -132,14 +135,32 @@ class Kids_phone:
         number = self.phonebook_db.execute(
             'select phonenumber from call_numbers_key_and_number where key=?', str(number)).fetchone()[0]
         return str(number)
-  
+    
+    def register(self, username, password, realm):
+        # Clear proxy and auth
+        self.core.clear_proxy_config()
+        self.core.clear_all_auth_info()
+
+        # Create new proxy settings
+        proxy_cfg = self.core.create_proxy_config()
+        proxy_cfg.identity_address = self.core.create_address('sip:{username}@{realm}'.format(username=username, realm=realm))
+        #proxy_cfg.server_addr = 'sip:{realm};transport=tls'.format(realm=realm)
+        proxy_cfg.server_addr = 'sip:{realm}'.format(realm=realm)
+        proxy_cfg.register_enabled = True
+        proxy_cfg.avpf_mode = 1
+        proxy_cfg.publish_enabled = True
+        self.core.add_proxy_config(proxy_cfg)
+        self.core.default_proxy_config = proxy_cfg
+    
+        # Create new auth settings
+        auth_info = self.core.create_auth_info(username, None, password, None, None, realm)
+        self.core.add_auth_info(auth_info)
+
     def run(self):
         while not self.quit:
-            self.core.iterate()
+            self.core.iterate() 
             time.sleep(0.03)
    
-def main():
-    phone = Kids_phone()
+if __name__ == "__main__":
+    phone = Kids_Phone()
     phone.run()
- 
-main()

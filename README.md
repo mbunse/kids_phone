@@ -34,10 +34,11 @@ sudo apt-get install python-dev
 ## Configuration Webserver
 ```
 sudo apt-get install python3-pip
-sudo pip3 install django
+sudo pip3 install django pydbus
 sudo apt-get install git
 sudo apt-get install gunicorn3
 sudo apt-get install nginx
+sudo apt-get install policykit-1
 ```
 
 I follow [the advise from gunicorn's documentation](http://gunicorn-docs.readthedocs.io/en/19.1.1/deploy.html) and use nginx as nginx as a proxy.

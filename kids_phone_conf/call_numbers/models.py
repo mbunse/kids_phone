@@ -25,4 +25,4 @@ class Caller_Number_Allowed(models.Model):
 
 class Global_Settings(models.Model):
     key = models.CharField(primary_key=True, max_length=50)
-    value = models.CharField(null=True)
+    value = models.CharField(null=True, max_length=200)
