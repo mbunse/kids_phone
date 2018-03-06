@@ -21,11 +21,10 @@ BLINK_MODES = {
 
 class Kids_Phone:
     def __init__(self):
-        self.quit = False
+        self.quit_flag = False
         callbacks =  {'call_state_changed': self.call_state_changed}
  
         # Configure the linphone core
-        logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(name)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
         signal.signal(signal.SIGINT, self.signal_handler)
         linphone.set_log_handler(self.log_handler)
         if "LINPHONE_CFG" in environ:
@@ -63,8 +62,10 @@ class Kids_Phone:
 
     def signal_handler(self, signal, frame):
         logging.info("Terminating sigint")
+
+    def quit(self):
         self.core.terminate_all_calls()
-        self.quit = True
+        self.quit_flag = True
         try:
             sys.stdout.close()
         except:
@@ -157,10 +158,11 @@ class Kids_Phone:
         self.core.add_auth_info(auth_info)
 
     def run(self):
-        while not self.quit:
+        while not self.quit_flag:
             self.core.iterate() 
             time.sleep(0.03)
-   
+        logging.info("kids_phone finished")
+
 if __name__ == "__main__":
     phone = Kids_Phone()
     phone.run()

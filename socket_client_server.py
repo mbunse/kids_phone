@@ -49,6 +49,8 @@ class Sock_Client(Sock_Base):
         except socket.error, msg:
             logging.error("Client cannot conntect to {server}: {msg}".format(server=self.server_address, msg=msg))
             return None
+        # set timeout for accept to 2 seconds
+        sock.settimeout(2)
         self.send_msg(sock, data)
         answer = self.recv_msg(sock)
         sock.close()
@@ -79,6 +81,7 @@ class Sock_Server(Sock_Base, threading.Thread):
         self.request_handler = request_handler
         self.__quit = threading.Event()
     def quit(self):
+        logging.info("quiting sock server")
         if self.__quit is not None:
             self.__quit.set()
         self.join()
@@ -122,7 +125,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     def request_handler(data):
-        return data
+        return None
 
     logging.info("starting server")
     server = Sock_Server("test_socket", request_handler)
