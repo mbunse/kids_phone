@@ -5,6 +5,7 @@ import logging
 import signal
 import time
 from os import environ
+import re
 
 import RPi.GPIO as GPIO
 
@@ -156,6 +157,19 @@ class Kids_Phone:
         # Create new auth settings
         auth_info = self.core.create_auth_info(username, None, password, None, None, realm)
         self.core.add_auth_info(auth_info)
+
+    def get_registration(self):
+        logging.info("Auth info has been requested")
+        if len(self.core.auth_info_list)>0:
+            registration = {}
+            auth_info = self.core.auth_info_list[0]
+            registration["username"] = auth_info.username
+            registration["realm"] = auth_info.realm
+            registration["proxy"] = re.search("<sip:([^>]*)>",
+                self.core.default_proxy_config.server_addr).group(1)
+            logging.info(registration)
+            return registration
+        return None
 
     def run(self):
         while not self.quit_flag:

@@ -41,6 +41,7 @@ chown -R kids_phone_www:kids_phone /var/www/kids_phone_conf
 # Create dir for socket and assign to kids_phone user
 mkdir -p /var/run/kids_phone
 chown -R kids_phone:kids_phone /var/run/kids_phone
+chmod g+w /var/run/kids_phone
 
 
 # set up logging

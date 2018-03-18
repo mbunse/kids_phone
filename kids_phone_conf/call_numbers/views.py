@@ -6,11 +6,10 @@ from .models import Key_And_Number, Caller_Number_Allowed, Global_Settings
 # Restart kids_phone if SIP account is updated
 from pydbus import SystemBus
 
+import os
 
-
-
-# parser for linphone config
-import configparser
+# communication with kids_phone through socket
+from socket_client_server import Sock_Client
 
 # Regex for parsing sip realm
 import re
@@ -49,13 +48,13 @@ def index(request, delete_phonenumber=None):
     caller_number_allowed_list = Caller_Number_Allowed.objects.order_by("phonenumber")
     key_and_number_list = Key_And_Number.objects.all()
 
-    # Read linphone conf
-    config = configparser.ConfigParser()
-    config.read(settings.LINPHONERC)
-
     sip_username = None
     sip_realm = None
     sip_proxy = None
+
+    # Set up client
+    server_address = os.getenv("KIDS_PHONE_SOCKET", './kids_phone_socket')
+    client = Sock_Client(server_address)
 
     # Check if user requested update of SIP account information
     if all (k in request.POST for k in ("sip_username","sip_realm", "sip_proxy", "sip_password")):
@@ -64,31 +63,30 @@ def index(request, delete_phonenumber=None):
         sip_proxy = request.POST["sip_proxy"]
         sip_password = request.POST["sip_password"]
 
-        config["auth_info_0"]["username"] = sip_username
-        config["auth_info_0"]["ha1"] = hashlib.md5(
-            "{username}:{realm}:{password}".format(
-                username=sip_username, realm=sip_realm, password=sip_password
-                ).encode()
-            ).hexdigest()
-        config["auth_info_0"]["realm"] = sip_realm
-        config["proxy_0"]["reg_proxy"] = "<sip:{proxy}>".format(proxy=sip_proxy)
-        config["proxy_0"]["reg_identity"] = "sip:{username}@{realm}".format(username=sip_username, realm=sip_realm)
-        with open(settings.LINPHONERC, "w") as f:
-            config.write(f)
-            # Restart kids_phone
-            if settings.DEBUG == False:
-                SystemBus().get(".systemd1").RestartUnit("kids_phone.service", "fail")
 
 
-    if "auth_info_0" in config.sections():
-        sip_username = config["auth_info_0"]["username"]
-        if "realm" in config["auth_info_0"]:
-            sip_realm =  config["auth_info_0"]["realm"]
-    if "proxy_0" in config.sections():
-        if "reg_proxy" in config["proxy_0"]:
-            sip_proxy = re.search("<sip:([^>]*)>", config["proxy_0"]["reg_proxy"]).group(1)
-        
+        # Construct message
+        data = {
+            "action": "register",
+            "data": {
+                "username": sip_username,
+                "password": sip_password,
+                "realm": sip_realm,
+                }
+        }
 
+        #Send to server
+        client.send(data)
+
+    # TODO: Request auth data from server        
+    data = {
+        "action": "get_registration",
+    }
+    registration = client.send(data)
+    if registration is not None:
+        sip_username =  registration["username"]
+        sip_realm = registration["realm"]
+        sip_proxy = registration["proxy"]
     context = {
         'key_and_number_list': key_and_number_list,
         'caller_number_allowed_list': caller_number_allowed_list,
