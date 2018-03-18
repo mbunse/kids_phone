@@ -8,9 +8,10 @@ Type=simple
 User=kids_phone
 Group=kids_phone
 WorkingDirectory=/usr/bin/kids_phone/
-ExecStart=/usr/bin/kids_phone/kids_phone.py
+ExecStart=/usr/bin/kids_phone/kids_phone_daemon.py
 Environment=LINPHONE_CFG=/etc/kids_phone/linphone.conf
 Environment=DB_PATH=/var/www/kids_phone_conf/db.kids_phone.sqlite
+Environment=KIDS_PHONE_SOCKET=/var/run/kids_phone.socket
 SyslogIdentifier=kids_phone
 StandardOutput=syslog
 StandardError=syslog
