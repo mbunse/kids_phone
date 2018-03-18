@@ -11,13 +11,13 @@ adduser kids_phone plugdev
 mkdir -p /usr/bin/kids_phone
 
 # move package to /usr/bin/kids_phone
-cp -f blinker.py cradle.py fetap_keypad.py kids_phone.py /usr/bin/kids_phone/.
-chmod +x /usr/bin/kids_phone/kids_phone.py
+cp -f blinker.py cradle.py fetap_keypad.py kids_phone.py kids_phone_daemon.py /usr/bin/kids_phone/.
+chmod +x /usr/bin/kids_phone/kids_phone_daemon.py
 chown -R kids_phone:kids_phone /usr/bin/kids_phone
 
 # make conf dir and conf file
 mkdir -p /etc/kids_phone
-cp -f linphonerc_bak /etc/kids_phone/linphone.conf
+cp -f linphone.conf /etc/kids_phone/linphone.conf
 chown -R kids_phone:kids_phone /etc/kids_phone
 chmod ag+r /etc/kids_phone/linphone.conf
 chmod g+w /etc/kids_phone/linphone.conf
@@ -38,6 +38,11 @@ sudo mkdir -p /var/www
 cp -r kids_phone_conf /var/www/.
 chown -R kids_phone_www:kids_phone /var/www/kids_phone_conf
 
+# Create dir for socket and assign to kids_phone user
+mkdir -p /var/run/kids_phone
+chown -R kids_phone:kids_phone /var/run/kids_phone
+
+
 # set up logging
 cp kids_phone_www_log.conf /etc/rsyslog.d/kids_phone_www.conf
 chmod ag+r /etc/rsyslog.d/kids_phone_www.conf
@@ -54,7 +59,8 @@ cp -f manage-kids_phone.rules /etc/polkit-1/rules.d/manage-kids_phone.rules
 systemctl stop nginx
 # extract IP address to be added to certificate
 IP=`ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`
-echo $IP
+echo IP is $IP
+
 # Create certificates if they not alread exist
 if [ ! -f "/etc/ssl/private/ssl-cert-kids_phone.key" ]
 then 
@@ -64,6 +70,25 @@ then
 fi
 # replace server name with IP, so that certificate fits to name
 cat nginx.conf | sed "s/server_name  localhost/server_name  $IP/g" >  nginx.conf_ip
+
+# Create secret key for django
+SECRET_KEY=`python -c "import string,random; uni=string.ascii_letters+string.digits+string.punctuation; print repr(''.join([random.SystemRandom().choice(uni) for i in range(random.randint(45,50))]))"`
+
+# Create secret file for django
+cat > /var/www/kids_phone_conf/kids_phone_conf/secrets.py <<EOL
+SECRET_KEY = ${SECRET_KEY}
+
+ALLOWED_HOSTS = ["${IP}"]
+
+EOL
+
+# Load initial data
+pushd /var/www/kids_phone_conf
+python3 manage.py makemigrations
+python3 manage.py makemigrations call_numbers
+python3 manage.py migrate
+python3 manage.py loaddata call_numbers/initial_fixture.json
+popd
 
 mv nginx.conf_ip /etc/nginx/nginx.conf
 rm -f /etc/nginx/sites-enabled/*
