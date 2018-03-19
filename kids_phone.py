@@ -165,7 +165,7 @@ class Kids_Phone:
             auth_info = self.core.auth_info_list[0]
             registration["username"] = auth_info.username
             registration["realm"] = auth_info.realm
-            registration["proxy"] = re.search("<sip:([^>]*)>",
+            registration["proxy"] = re.search("sip:([^>]*)",
                 self.core.default_proxy_config.server_addr).group(1)
             logging.info(registration)
             return registration
