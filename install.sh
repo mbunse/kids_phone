@@ -59,16 +59,9 @@ cp -f manage-kids_phone.rules /etc/polkit-1/rules.d/manage-kids_phone.rules
 # set up nginx
 systemctl stop nginx
 # extract IP address to be added to certificate
-IP=`ifconfig | sed -En 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`
+IP=`ifconfig wlan0 | sed -zEn 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`
 echo IP is $IP
 
-# Create certificates if they not alread exist
-if [ ! -f "/etc/ssl/private/ssl-cert-kids_phone.key" ]
-then 
-    openssl req -x509 -newkey rsa:4096 -keyout ssl-cert-kids_phone.key -out ssl-cert-kids_phone.pem -nodes -subj "/CN=$IP/C=DE"
-    mv ssl-cert-kids_phone.key /etc/ssl/private/ssl-cert-kids_phone.key
-    mv ssl-cert-kids_phone.pem /etc/ssl/certs/ssl-cert-kids_phone.pem
-fi
 # replace server name with IP, so that certificate fits to name
 cat nginx.conf | sed "s/server_name  localhost/server_name  $IP/g" >  nginx.conf_ip
 
@@ -106,4 +99,3 @@ systemctl enable kids_phone_www
 systemctl restart kids_phone
 systemctl restart kids_phone_www
 systemctl restart nginx
-

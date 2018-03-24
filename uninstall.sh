@@ -31,10 +31,6 @@ rm /etc/polkit-1/rules.d/manage-kids_phone.rules
 # Remove socket dir
 rm -rf /var/run/kids_phone
 
-# remove ssl certs
-rm -f /etc/ssl/private/ssl-cert-kids_phone.key 
-rm -f /etc/ssl/certs/ssl-cert-kids_phone.pem
-
 rm -f /etc/nginx/nginx.conf
 
 # reload units
