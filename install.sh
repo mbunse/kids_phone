@@ -59,11 +59,11 @@ cp -f manage-kids_phone.rules /etc/polkit-1/rules.d/manage-kids_phone.rules
 # set up nginx
 systemctl stop nginx
 # extract IP address to be added to certificate
-IP=`ifconfig wlan0 | sed -zEn 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`
+# IP=`ifconfig wlan0 | sed -zEn 's/127.0.0.1//;s/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p'`
 echo IP is $IP
 
 # replace server name with IP, so that certificate fits to name
-cat nginx.conf | sed "s/server_name  localhost/server_name  $IP/g" >  nginx.conf_ip
+# cat nginx.conf | sed "s/server_name  localhost/server_name  $IP/g" >  nginx.conf_ip
 
 # Create secret key for django
 SECRET_KEY=`python -c "import string,random; uni=string.ascii_letters+string.digits+string.punctuation; print repr(''.join([random.SystemRandom().choice(uni) for i in range(random.randint(45,50))]))"`
@@ -72,7 +72,7 @@ SECRET_KEY=`python -c "import string,random; uni=string.ascii_letters+string.dig
 cat > /var/www/kids_phone_conf/kids_phone_conf/secrets.py <<EOL
 SECRET_KEY = ${SECRET_KEY}
 
-ALLOWED_HOSTS = ["${IP}"]
+ALLOWED_HOSTS = ["*"]
 
 EOL
 
