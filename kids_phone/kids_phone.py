@@ -125,13 +125,21 @@ class Kids_Phone:
         if cradle.check_cradle() == False:
             return
         # Call someone if there is no active call:
-        if self.state in (linphone.CallState.Idle, linphone.CallState.Released, linphone.CallState.End):
-            # Check if phonenumber is set for current key
-            phonenumber = self.phonebook(number)
-            if phonenumber != None:
-                params = self.core.create_call_params(self.core.current_call)
-                params.early_media_sending_enabled = False
-                self.core.invite_with_params(phonenumber, params)
+        if self.state not in (linphone.CallState.Idle, linphone.CallState.Released, linphone.CallState.End):
+            logging.info("There seems to be an active call")
+            return
+        
+        # Check if phonenumber is set for current key
+        phonenumber = self.phonebook(number)
+
+        if phonenumber is None:
+            logging.info("No phonenumber found for key {number}.".format(number=number))
+            return
+
+        logging.info("Calling {phonenumber}...".format(phonenumber=phonenumber))
+        params = self.core.create_call_params(self.core.current_call)
+        params.early_media_sending_enabled = False
+        self.core.invite_with_params(phonenumber, params)
     
     def phonebook(self, number):
         number = self.phonebook_db.execute(

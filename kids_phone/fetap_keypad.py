@@ -12,8 +12,8 @@ import logging
 from itertools import compress
 import time
 
-ROW_PINS = [22, 10, 9, 11]
-COL_PINS = [4, 17, 27]
+ROW_PINS = [14, 16, 21, 20]
+COL_PINS = [24, 18, 15]
 
 TWB75 = 1
 TWB81 = 0

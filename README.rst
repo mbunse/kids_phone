@@ -26,7 +26,7 @@ sudo pip install socket_client_server
 To register the linphone client on a SIP service run the linphone command line tool:
 ```
 #> linphonec
-linphone> register sip:<username>@<SIP_domain> sip:<SIP_domain> <PASSWORD>
+linphone> register sip:<username>@<SIP_domain> <SIP_domain> <PASSWORD>
 ```
 This will create an rc file `/home/pi/.linphonerc` which will be used a standard configuration file for __kids_phone__.
 
@@ -43,6 +43,7 @@ sudo apt-get install git
 sudo apt-get install gunicorn3
 sudo apt-get install nginx
 sudo apt-get install policykit-1
+sudo pip install socket_client_server
 ```
 
 I follow [the advise from gunicorn's documentation](http://gunicorn-docs.readthedocs.io/en/19.1.1/deploy.html) and use nginx as nginx as a proxy.
