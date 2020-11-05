@@ -9,14 +9,20 @@ Global Variables
 """
 import RPi.GPIO as GPIO
 import logging
+from itertools import compress
+import time
 
+ROW_PINS = [22, 10, 9, 11]
+COL_PINS = [4, 17, 27]
 
-ROW_PINS = [14, 16, 21, 20]
-COL_PINS = [24, 18, 15]
-
+TWB75 = 1
+TWB81 = 0
 __key_handler = None
+__twb_type = None
 
-def setup(key_handler):
+STATE = {False: "False", True: "True"}
+
+def setup(key_handler, twb_type = TWB81):
     """
     Parameters
     ==========
@@ -25,23 +31,39 @@ def setup(key_handler):
     """
     logging.debug("intializing {name}".format(name=__file__))
 
-    global __key_handler 
+    global __key_handler, __twb_type
     if __key_handler is None:
         __key_handler = key_handler
     else:
         raise RuntimeError("Key handler has already been set.")
+
+    if __twb_type is None:
+        __twb_type = twb_type
+    else:
+        raise RuntimeError("TWB tpye has already been set.")
 
     global __active_rows, __active_cols
     __active_rows = [False, False, False, False]
     __active_cols = [False, False, False]
     if GPIO.getmode() == None:
         GPIO.setmode(GPIO.BCM)
-    for pin in ROW_PINS+COL_PINS:
-        if pin:
-            logging.debug("Setting up pin {pin}".format(pin=pin))
+    if __twb_type == TWB81:
+        for pin in ROW_PINS+COL_PINS:
             GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
             GPIO.add_event_detect(pin, GPIO.BOTH, callback=pin_handler)
+    elif __twb_type == TWB75:
+        for pin in ROW_PINS:
+            GPIO.setup(pin, GPIO.OUT)
+            GPIO.output(pin, GPIO.LOW)
+        for pin in COL_PINS:
+            GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            GPIO.add_event_detect(pin, GPIO.FALLING, callback=pin_handler)
+    else:
+        raise ValueError("twb_type should be either fetap_keypad.TWB75 or fetap_keypad.TWB81.")
 def cleanup():
+    global __key_handler, __twb_type
+    __key_handler = None
+    __twb_type = None
     logging.debug("cleaning up {name}".format(name=__file__))
     #GPIO.cleanup(ROW_PINS+COL_PINS)
     GPIO.cleanup()
@@ -49,6 +71,7 @@ def cleanup():
 
 def pin_handler(pin):
     global __active_rows, __active_cols
+    logging.debug("pin_handler called")
 
     row, col = get_row_col_from_pin(pin)
     if GPIO.input(pin) == False:
@@ -81,7 +104,39 @@ def get_row_col_from_pin(pin):
     return row, col
 
 def check_button():
-    global __active_rows, __active_cols
+    global __active_rows, __active_cols, __twb_type
+
+    if __twb_type == TWB75:
+        # Switch the i-th row found from scan to output
+        for pin in ROW_PINS:
+            GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
+        # Switch pin to output for active column
+        for pin in compress(COL_PINS, __active_cols):
+            #GPIO.remove_event_detect(pin)
+            GPIO.setup(pin, GPIO.OUT)
+            GPIO.output(pin, GPIO.HIGH)
+            
+
+        for pin in ROW_PINS:
+            if GPIO.input(pin):
+                row, _ = get_row_col_from_pin(pin)
+                __active_rows[row] = True
+                # Wait for release of button
+                GPIO.wait_for_edge(pin, GPIO.FALLING, timeout=2000)
+
+                # Avoid bouncing
+                while GPIO.input(pin):
+                    time.sleep(0.02)
+                break
+        
+        # Reset state        
+        for pin in compress(COL_PINS, __active_cols):
+            GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            #GPIO.add_event_detect(pin, GPIO.BOTH, callback=pin_handler)
+        for pin in ROW_PINS:
+            GPIO.setup(pin, GPIO.OUT)
+            GPIO.output(pin, GPIO.LOW)
 
     #Check if two pins are active. If not, exit function
     if min(1,sum(__active_rows))+min(1,sum(__active_cols))<2:
@@ -116,6 +171,6 @@ if __name__=="__main__":
     def key_handler(key):
         print("{key} pressed".format(key=key))
     
-    setup(key_handler=key_handler)
+    setup(key_handler=key_handler, twb_type=TWB75)
     time.sleep(200)
     cleanup()

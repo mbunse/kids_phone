@@ -28,8 +28,12 @@ class Kids_Phone_Daemon():
                 password = data["data"]["password"]
                 realm = data["data"]["realm"]
                 self.kids_phone.register(username, password, realm)
+                return None
+            # TODO: request auth data
+            elif data["action"] == "get_registration":
+                return self.kids_phone.get_registration()    
         except KeyError:
-            logging.error("unexpected key in message")
+            logging.error("missing key in message.")
         return None
     def signal_handler(self, signal, frame):
         self.quit()
@@ -45,6 +49,7 @@ class Kids_Phone_Daemon():
 if __name__ == "__main__":
     import time
     from socket_client_server import Sock_Client
+    os.getenv("LOG_LEVEL", 'INFO')
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s:%(name)s:%(message)s', datefmt='%d/%m/%Y %I:%M:%S %p')
 
     daemon = Kids_Phone_Daemon()

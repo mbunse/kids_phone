@@ -18,6 +18,10 @@ sudo apt-get install linphone-nogtk
 wget http://linphone.org/releases/linphone-python-raspberry/linphone4raspberry-3.9.1-cp27-none-any.whl
 sudo pip install linphone4raspberry-3.9.1-cp27-none-any.whl
 ```
+Install socket_client_server
+```
+sudo pip install socket_client_server
+```
 
 To register the linphone client on a SIP service run the linphone command line tool:
 ```
