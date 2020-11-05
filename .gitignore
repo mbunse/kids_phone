@@ -4,3 +4,6 @@ kids_phone_conf/call_numbers/initial_private_fixture.json
 *.pyc
 kids_phone_conf/call_numbers/migrations/
 
+.vscode
+
+linphonerc_bak
